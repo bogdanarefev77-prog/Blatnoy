@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра «Блатной» — Симулятор Блатных Автономеров</title>
+    <style>
+        /* ==========================================================================
+           1. НАСТРОЙКИ СТИЛЕЙ И ПАЛИТРЫ (Тёмная тема, чёрно-красный неон)
+           ========================================================================== */
+        :root {
+            --bg-main: #121212;
+            --bg-panel: #1e1e1e;
+            --accent-bright: #ff3333;
+            --accent-dark: #cc0000;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            
+            /* Цвета редкостей */
+            --rarity-common: #888888;
+            --rarity-rare: #3377ff;
+            --rarity-epic: #9933ff;
+            --rarity-elite: #ff3333;
+            --rarity-legendary: #ff9900;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(180deg, rgba(18, 18, 18, 0.9) 0%, rgba(30, 30, 30, 0.95) 100%),
+                radial-gradient(circle at 20% 30%, rgba(204, 0, 0, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(255, 51, 51, 0.1) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        header {
+            background-color: var(--bg-panel);
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--accent-dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-main);
+        }
+
+        header h1 span {
+            color: var(--accent-bright);
+            text-shadow: 0 0 10px var(--accent-bright);
+        }
+
+        /* Тизер хоррора в шапке */
+        .horror-teaser {
+            color: #ff3333;
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulse-glow 2s infinite alternate;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Идеальный Желтый Улыбающийся Верити из фото */
+        .verity-smile {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+
+        @keyframes pulse-glow {
+            0% { text-shadow: 0 0 5px rgba(255, 51, 51, 0.5); opacity: 0.8; }
+            100% { text-shadow: 0 0 15px rgba(255, 51, 51, 1); opacity: 1; }
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .game-zone {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .country-selector {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .country-btn {
+            background-color: var(--bg-panel);
+            color: var(--text-muted);
+            border: 1px solid #333;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .country-btn:hover, .country-btn.active {
+            color: var(--text-main);
+            border-color: var(--accent-bright);
+            background-color: rgba(255, 51, 51, 0.1);
+        }
+
+        .country-btn.active {
+            box-shadow: inset 0 0 8px rgba(255, 51, 51, 0.3);
+        }
+
+        .plate-display-container {
+            background-color: var(--bg-panel);
+            border-radius: 8px;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 220px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            position: relative;
+        }
+
+        /* ГОСТ-оформление номерных знаков */
+        .license-plate {
+            background-color: #fcfcfc;
+            color: #111111;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            border-radius: 6px;
+            border: 4px solid #000000;
+            display: inline-flex;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6), inset 0 0 4px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+        }
+
+        /* ИСПРАВЛЕННАЯ СЕТКА РФ: Идеальное горизонтальное выравнивание всех элементов */
+        .plate-ru {
+            width: 440px;
+            height: 90px;
+            padding: 0;
+            justify-content: space-between;
+        }
+
+        .plate-ru .main-sign {
+            font-size: 56px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            flex: 1;
+            padding-left: 15px;
+            gap: 2px;
+            line-height: 1;
+        }
+
+        /* Жёсткое выравнивание буквенных групп и цифр по единой базовой оси */
+        .plate-ru .main-sign .char-group {
+            font-size: 42px;
+            display: inline-flex;
+            align-items: center;
+            align-self: center;
+            height: 100%;
+            padding-top: 4px;
+        }
+
+        .plate-ru .main-sign .num-group {
+            font-size: 58px;
+            display: inline-flex;
+            align-items: center;
+            align-self: center;
+            height: 100%;
+        }
+
+        .plate-ru .region-block {
+            border-left: 4px solid #000000;
+            height: 100%;
+            width: 105px;
+            min-width: 105px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #fcfcfc;
+        }
+
+        .plate-ru .region-code {
+            font-size: 42px;
+            line-height: 1;
+            margin-bottom: 2px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .plate-ru .country-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        .plate-ru .flag-ru {
+            width: 18px;
+            height: 11px;
+            display: inline-block;
+            background: linear-gradient(to bottom, #fff 33.3%, #0039a6 33.3%, #0039a6 66.6%, #d52b1e 66.6%);
+            border: 1px solid #aaa;
+        }
+
+        /* Новый формат номеров Грузии */
+        .plate-ge {
+            height: 90px;
+            min-width: 420px;
+            padding: 0 20px 0 65px;
+            font-size: 44px;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            display: inline-flex;
+            gap: 10px;
+        }
+
+        .plate-ge .euro-band {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 45px;
+            background-color: #003399;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 5px 0;
+        }
+
+        .plate-ge .ge-flag-svg {
+            width: 32px;
+            height: 22px;
+        }
+
+        .plate-ge .hologram {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #e6e6e6, #999 60%, #555);
+            box-shadow: inset 0 0 3px rgba(0,0,0,0.5);
+            margin-left: auto;
+        }
+
+        /* Общие иностранные стили */
+        .plate-foreign {
+            height: 90px;
+            min-width: 420px;
+            padding: 0 15px;
+            font-size: 44px;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .plate-foreign .euro-band {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 35px;
+            background-color: #003399;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 11px;
+            font-family: sans-serif;
+        }
+
+        .plate-foreign .euro-stars {
+            color: #ffcc00;
+            font-size: 10px;
+            line-height: 8px;
+        }
+
+        .plate-foreign .country-code {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .plate-foreign.has-band {
+            padding-left: 50px;
+        }
+
+        .rolling {
+            animation: pulse-roll 0.05s infinite alternate;
+            opacity: 0.7;
+            filter: blur(0.5px);
+        }
+
+        @keyframes pulse-roll {
+            0% { transform: translateY(-1px); }
+            100% { transform: translateY(1px); }
+        }
+
+        .controls-zone {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .btn {
+            background: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent-dark) 100%);
+            color: white;
+            border: none;
+            padding: 15px 10px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(204, 0, 0, 0.3);
+            transition: all 0.1s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 4px 14px rgba(255, 51, 51, 0.5);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            filter: brightness(0.9);
+        }
+
+        .btn:disabled {
+            background: #444 !important;
+            color: #777;
+            cursor: not-allowed;
+            box-shadow: none;
+            text-shadow: none;
+        }
+
+        /* Фирменная желтая кнопка сохранения */
+        .btn-save {
+            background: linear-gradient(180deg, #ffcc00 0%, #cc9900 100%) !important;
+            color: #000000 !important;
+            text-shadow: none !important;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.2) !important;
+        }
+        .btn-save:hover {
+            box-shadow: 0 4px 14px rgba(255, 204, 0, 0.4) !important;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(180deg, #333 0%, #222 100%);
+            border: 1px solid #444;
+            box-shadow: none;
+        }
+        
+        .btn-secondary:hover {
+            border-color: #666;
+            box-shadow: none;
+        }
+
+        .side-panel {
+            flex: 1;
+            background-color: var(--bg-panel);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            min-width: 280px;
+        }
+
+        .stat-box {
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            padding: 12px 15px;
+            border-left: 4px solid var(--accent-bright);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .version-value {
+            color: #ff3333;
+            text-shadow: 0 0 5px rgba(255,51,51,0.2);
+        }
+
+        .currency-value {
+            color: #ffcc00;
+            text-shadow: 0 0 5px rgba(255,204,0,0.2);
+        }
+
+        .rarity-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-top: 5px;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .inventory-section {
+            background-color: var(--bg-panel);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 0 auto 30px auto;
+            max-width: 1400px;
+            width: calc(100% - 40px);
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+
+        .inventory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 10px;
+            min-height: 250px;
+        }
+
+        .inventory-cell {
+            background-color: rgba(0,0,0,0.3);
+            border: 1px dashed #444;
+            border-radius: 6px;
+            aspect-ratio: 1.5 / 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 4px;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+
+        /* ЖЕСТКОЕ ОТОБРАЖЕНИЕ ГАРАЖА БЕЗ БАГОВ: Белый фон, черный текст */
+        .inventory-cell.occupied {
+            border-style: solid;
+            background-color: #ffffff !important;
+        }
+
+        .inventory-cell.occupied .item-plate-text {
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 11px;
+            background: #ffffff;
+            color: #000000 !important;
+            padding: 2px 4px;
+            border-radius: 2px;
+            text-align: center;
+            width: 95%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .inventory-cell.occupied .item-info {
+            font-size: 9px;
+            margin-top: 3px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .btn-sell {
+            position: absolute;
+            bottom: 2px;
+            width: calc(100% - 8px);
+            background: #cc0000;
+            color: white;
+            border: none;
+            font-size: 9px;
+            padding: 2px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s;
+            font-weight: bold;
+        }
+
+        .inventory-cell.occupied:hover .btn-sell {
+            opacity: 1;
+        }
+        
+        .inventory-cell.occupied:hover .item-info {
+            opacity: 0;
+        }
+
+        .log-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .log-toast {
+            background-color: rgba(20, 20, 20, 0.9);
+            border-left: 4px solid var(--accent-bright);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            animation: fadeInRight 0.3s ease forwards;
+        }
+
+        @keyframes fadeInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @media(max-width: 1024px) {
+            .inventory-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            .main-container {
+                flex-direction: column;
+            }
+            .controls-zone {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="log-box" id="logBox"></div>
+
+    <header>
+        <div class="header-title-container">
+            <h1>Проект <span>«Блатной»</span></h1>
+            <div class="horror-teaser">
+                DO YOU LIVE ALONE
+                <svg class="verity-smile" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="#ffcc00"/>
+                    <ellipse cx="35" cy="40" rx="5" ry="8" fill="#000000"/>
+                    <ellipse cx="65" cy="40" rx="5" ry="8" fill="#000000"/>
+                    <!-- Идеальная широкая улыбка Верити из фото с засечками по бокам -->
+                    <path d="M 25,50 A 25,25 0 0 0 75,50" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M 22,46 L 28,54" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M 78,46 L 72,54" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="game.resetProgress()">Начать заново</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="game-zone">
+            <div class="country-selector" id="countrySelector"></div>
+
+            <div class="plate-display-container">
+                <div id="plateTarget"></div>
+            </div>
+
+            <div class="controls-zone">
+                <button class="btn" id="btnRollAll" onclick="game.roll('all')">Всё сразу</button>
+                <button class="btn" id="btnRollLetters" onclick="game.roll('letters')">Буквы</button>
+                <button class="btn" id="btnRollNumbers" onclick="game.roll('numbers')">Цифры</button>
+                <button class="btn" id="btnRollRegion" onclick="game.roll('region')">Регион</button>
+                <button class="btn btn-save" id="btnSavePlate" onclick="game.saveCurrentPlate()">Сохранить</button>
+            </div>
+        </div>
+
+        <div class="side-panel">
+            <div class="stat-box">
+                <div class="stat-label">Баланс</div>
+                <div class="stat-value currency-value" id="balanceDisplay">1 000 ₽</div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-label">Редкость номера</div>
+                <div id="rarityDisplay"><span class="rarity-tag" style="background-color: var(--rarity-common)">Обычный</span></div>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-label">Версия игры</div>
+                <div class="stat-value version-value">v 1.3</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="inventory-section">
+        <div class="inventory-header">
+            <h2>Твой Гараж / Коллекция</h2>
+            <div id="inventoryCount" style="font-weight: bold; color: var(--accent-bright);">Слот: 0 / 50</div>
+        </div>
+        <div class="inventory-grid" id="inventoryGrid"></div>
+    </div>
+
+    <script>
+        const RU_REGIONS = [
+            "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", 
+            "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", 
+            "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", 
+            "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", 
+            "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", "92", "93", "94", "95", "96", "97", 
+            "98", "99", "102", "113", "116", "121", "123", "124", "125", "126", "134", "136", "138", "142", "150", "152", "154", 
+            "159", "161", "163", "164", "173", "174", "177", "178", "186", "190", "193", "196", "197", "199", "702", "716", "725", 
+            "750", "761", "763", "774", "777", "790", "797", "799"
+        ];
+
+        const RU_LETTERS = ["А", "В", "Е", "К", "М", "Н", "О", "Р", "С", "Т", "У", "Х"];
+
+        const COUNTRIES = {
+            RU: { name: "Россия 🇷🇺" },
+            KZ: { name: "Казахстан 🇰🇿" },
+            BY: { name: "Беларусь 🇧🇾" },
+            UA: { name: "Украина 🇺🇦" },
+            GE: { name: "Ггрузия 🇬🇪" },
+            FR: { name: "Франция 🇫🇷" },
+            DE: { name: "Германия 🇩🇪" },
+            PL: { name: "Польша 🇵🇱" },
+            ES: { name: "Испания 🇪🇸" }
+        };
+
+        const RARITIES = {
+            COMMON: { label: "Обычный", color: "var(--rarity-common)", minPrice: 1000, maxPrice: 5000 },
+            RARE: { label: "Редкий", color: "var(--rarity-rare)", minPrice: 15000, maxPrice: 100000 },
+            VERY_RARE: { label: "Очень редкий", color: "var(--rarity-epic)", minPrice: 150000, maxPrice: 1000000 },
+            ELITE: { label: "Элитный", color: "var(--rarity-elite)", minPrice: 1500000, maxPrice: 5000000 },
+            LEGENDARY: { label: "Легендарный", color: "var(--rarity-legendary)", minPrice: 7000000, maxPrice: 20000000 }
+        };
+
+        class PlateEngine {
+            static randomChar(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+            static randomDigits(len) { return Array.from({length: len}, () => Math.floor(Math.random() * 10)).join(''); }
+            static randomLetters(len) { return Array.from({length: len}, () => this.randomChar(RU_LETTERS)).join(''); }
+
+            static generate(country, parts = { letters: null, numbers: null, region: null }) {
+                switch(country) {
+                    case "RU":
+                        return {
+                            l1: parts.letters ? parts.letters[0] : this.randomLetters(1),
+                            num: parts.numbers ? parts.numbers : this.randomDigits(3),
+                            l23: parts.letters ? parts.letters.substring(1, 3) : this.randomLetters(2),
+                            reg: parts.region ? parts.region : this.randomChar(RU_REGIONS)
+                        };
+                    case "KZ":
+                        return {
+                            num: parts.numbers ? parts.numbers : this.randomDigits(3),
+                            l: parts.letters ? parts.letters : this.randomLetters(3),
+                            reg: parts.region ? parts.region : String(Math.floor(Math.random() * 17) + 1).padStart(2, '0')
+                        };
+                    case "BY":
+                        return {
+                            num: parts.numbers ? parts.numbers : this.randomDigits(4),
+                            l: parts.letters ? parts.letters : this.randomLetters(2),
+                            reg: parts.region ? parts.region : String(Math.floor(Math.random() * 7) + 1)
+                        };
+                    case "UA":
+                        return {
+                            l1: parts.letters ? parts.letters.substring(0, 2) : this.randomLetters(2),
+                            num: parts.numbers ? parts.numbers : this.randomDigits(4),
+                            l2: parts.letters ? parts.letters.substring(2, 4) : this.randomLetters(2)
+                        };
+                    case "GE":
+                        return {
+                            l1: parts.letters ? parts.letters.substring(0, 2) : this.randomLetters(2),
+                            num: parts.numbers ? parts.numbers : this.randomDigits(3),
+                            l2: parts.letters ? parts.letters.substring(2, 4) : this.randomLetters(2)
+                        };
+                    case "FR":
+                        return {
+                            l1: parts.letters ? parts.letters.substring(0, 2) : this.randomLetters(2),
+                            num: parts.numbers ? parts.numbers : this.randomDigits(3),
+                            l2: parts.letters ? parts.letters.substring(2, 4) : this.randomLetters(2)
+                        };
+                    case "DE":
+                        return {
+                            l1: parts.letters ? parts.letters.substring(0, 1) : this.randomChar(["B", "M", "H", "K", "S"]), 
+                            l2: parts.letters ? parts.letters.substring(1, 3) : this.randomLetters(2),
+                            num: parts.numbers ? parts.numbers : this.randomDigits(4)
+                        };
+                    case "PL":
+                        return {
+                            l: parts.letters ? parts.letters : this.randomLetters(2),
+                            num: parts.numbers ? parts.numbers : this.randomDigits(5)
+                        };
+                    case "ES":
+                        return {
+                            num: parts.numbers ? parts.numbers : this.randomDigits(4),
+                            l: parts.letters ? parts.letters : this.randomLetters(3)
+                        };
+                }
+            }
+
+            // Математическая калибровка строго под ТЗ и проценты
+            static evaluateRarity(plate, country) {
+                let numStr = plate.num || "";
+                let letStr = (plate.l1 || "") + (plate.l23 || "") + (plate.l2 || "") + (plate.l || "");
+                let regStr = plate.reg || "";
+
+                // Глобальный рандомизатор шансов
+                let rand = Math.random() * 100;
+
+                // 1. ЛЕГЕНДАРНЫЙ (0.1%)
+                if (rand <= 0.1) {
+                    return RARITIES.LEGENDARY;
+                }
+                // 2. ЭЛИТНЫЙ (0.5%)
+                if (rand <= 0.6) {
+                    return RARITIES.ELITE;
+                }
+                // 3. ОЧЕНЬ РЕДКИЙ (3.5% после улучшения на 1.5%)
+                if (rand <= 4.1) {
+                    return RARITIES.VERY_RARE;
+                }
+                // 4. РЕДКИЙ (5.0%)
+                if (rand <= 9.1) {
+                    return RARITIES.RARE;
+                }
+                
+                // 5. ОБЫЧНЫЙ (88.5%)
+                return RARITIES.COMMON;
+            }
+
+            static toReadableString(plate, country) {
+                switch(country) {
+                    case "RU": return `${plate.l1}${plate.num}${plate.l23} ${plate.reg}`;
+                    case "KZ": return `${plate.num} ${plate.l} / ${plate.reg}`;
+                    case "BY": return `${plate.num} ${plate.l}-${plate.reg}`;
+                    case "UA": return `${plate.l1} ${plate.num} ${plate.l2}`;
+                    case "GE": return `${plate.l1}-${plate.num}-${plate.l2}`;
+                    case "FR": return `${plate.l1}-${plate.num}-${plate.l2}`;
+                    case "DE": return `${plate.l1} ${plate.l2} ${plate.num}`;
+                    case "PL": return `${plate.l} ${plate.num}`;
+                    case "ES": return `${plate.num} ${plate.l}`;
+                    default: return "Номер";
+                }
+            }
+        }
+
+        class GameController {
+            constructor() {
+                this.state = {
+                    balance: 1000,
+                    currentCountry: "RU",
+                    currentPlate: null,
+                    currentRarity: RARITIES.COMMON,
+                    inventory: [],
+                    isRolling: false,
+                    isSaved: false
+                };
+                this.maxInventorySize = 50;
+                this.uniqueHistory = new Set();
+            }
+
+            init() {
+                this.loadProgress();
+                this.renderCountrySelector();
+                this.renderInventorySlots();
+                
+                this.state.currentPlate = PlateEngine.generate(this.state.currentCountry);
+                this.state.currentRarity = PlateEngine.evaluateRarity(this.state.currentPlate, this.state.currentCountry);
+                this.state.isSaved = false;
+                this.updateUI();
+            }
+
+            renderCountrySelector() {
+                const container = document.getElementById("countrySelector");
+                container.innerHTML = "";
+                Object.keys(COUNTRIES).forEach(key => {
+                    const btn = document.createElement("button");
+                    btn.className = `country-btn ${this.state.currentCountry === key ? 'active' : ''}`;
+                    btn.textContent = COUNTRIES[key].name;
+                    btn.onclick = () => this.switchCountry(key);
+                    container.appendChild(btn);
+                });
+            }
+
+            renderInventorySlots() {
+                const grid = document.getElementById("inventoryGrid");
+                grid.innerHTML = "";
+                for (let i = 0; i < this.maxInventorySize; i++) {
+                    const cell = document.createElement("div");
+                    cell.className = "inventory-cell";
+                    cell.id = `inv-cell-${i}`;
+                    grid.appendChild(cell);
+                }
+            }
+
+            switchCountry(countryKey) {
+                if (this.state.isRolling) return;
+                this.state.currentCountry = countryKey;
+                this.renderCountrySelector();
+                this.state.currentPlate = PlateEngine.generate(countryKey);
+                this.state.currentRarity = PlateEngine.evaluateRarity(this.state.currentPlate, this.state.currentCountry);
+                this.state.isSaved = false;
+                this.updateUI();
+            }
+
+            generatePrice(rarity) {
+                return Math.floor(Math.random() * (rarity.maxPrice - rarity.minPrice + 1)) + rarity.minPrice;
+            }
+
+            roll(mode) {
+                if (this.state.isRolling) return;
+                
+                this.state.isRolling = true;
+                this.state.isSaved = false;
+                this.toggleButtons(false);
+                
+                const plateTarget = document.getElementById("plateTarget");
+                plateTarget.classList.add("rolling");
+                
+                let counter = 0;
+                const interval = setInterval(() => {
+                    let tempGen = PlateEngine.generate(this.state.currentCountry);
+                    let displayPlate = this.mixPlates(this.state.currentPlate, tempGen, mode);
+                    this.renderPlate(displayPlate);
+                    counter++;
+                    
+                    if (counter > 3) {
+                        clearInterval(interval);
+                        plateTarget.classList.remove("rolling");
+                        this.finalizeRoll(mode);
+                    }
+                }, 50);
+            }
+
+            mixPlates(current, generated, mode) {
+                let mixed = JSON.parse(JSON.stringify(current));
+                if (mode === 'all') {
+                    return generated;
+                }
+                if (mode === 'letters') {
+                    mixed.l1 = generated.l1;
+                    mixed.l23 = generated.l23;
+                    mixed.l = generated.l;
+                    mixed.l2 = generated.l2;
+                } else if (mode === 'numbers') {
+                    mixed.num = generated.num;
+                } else if (mode === 'region') {
+                    mixed.reg = generated.reg;
+                }
+                return mixed;
+            }
+
+            finalizeRoll(mode) {
+                let attempts = 0;
+                let finalGen;
+                let readableStr;
+
+                // Поиск уникального номера, которого еще не было в истории
+                do {
+                    finalGen = PlateEngine.generate(this.state.currentCountry);
+                    let potentialPlate = this.mixPlates(this.state.currentPlate, finalGen, mode);
+                    readableStr = PlateEngine.toReadableString(potentialPlate, this.state.currentCountry);
+                    attempts++;
+                    if(attempts > 50) break; 
+                } while (this.uniqueHistory.has(readableStr));
+
+                // Фиксация
+                this.state.currentPlate = this.mixPlates(this.state.currentPlate, finalGen, mode);
+                this.uniqueHistory.add(readableStr);
+
+                // Сохранение редкости "Редкий" при докрутке цифр/региона
+                let newRarity = PlateEngine.evaluateRarity(this.state.currentPlate, this.state.currentCountry);
+                if ((mode === 'numbers' || mode === 'region') && this.state.currentRarity === RARITIES.RARE) {
+                    // Удерживаем редкий грейд
+                } else {
+                    this.state.currentRarity = newRarity;
+                }
+
+                // Особые польские правила на 5 цифр
+                if (this.state.currentCountry === 'PL' && new Set(this.state.currentPlate.num).size === 1) {
+                    this.state.currentRarity = RARITIES.LEGENDARY;
+                }
+
+                // Правило на 4 одинаковые цифры для иностранных автономеров
+                if (this.state.currentCountry !== 'RU' && this.state.currentCountry !== 'KZ' && this.state.currentPlate.num) {
+                    if (this.state.currentPlate.num.length >= 4 && new Set(this.state.currentPlate.num.substring(0,4)).size === 1) {
+                        this.state.currentRarity = RARITIES.ELITE;
+                    }
+                }
+
+                this.state.isRolling = false;
+                this.toggleButtons(true);
+                this.updateUI();
+                this.saveProgress();
+                this.showToast(`Выбит номер: ${readableStr}`);
+            }
+
+            saveCurrentPlate() {
+                if (this.state.isSaved || this.state.isRolling) return;
+
+                if (this.state.inventory.length >= this.maxInventorySize) {
+                    this.showToast("Гараж переполнен! Продай старые номера.", true);
+                    return;
+                }
+
+                const readable = PlateEngine.toReadableString(this.state.currentPlate, this.state.currentCountry);
+                const savedItem = {
+                    id: Date.now() + Math.random(),
+                    country: this.state.currentCountry,
+                    plateData: JSON.parse(JSON.stringify(this.state.currentPlate)),
+                    rarity: this.state.currentRarity,
+                    price: this.generatePrice(this.state.currentRarity),
+                    readable: readable
+                };
+
+                // Особая фиксация цены на 4 цифры
+                if (this.state.currentCountry !== 'RU' && this.state.currentCountry !== 'KZ' && savedItem.plateData.num) {
+                    if (savedItem.plateData.num.length >= 4 && new Set(savedItem.plateData.num.substring(0,4)).size === 1) {
+                        savedItem.price = 5000000;
+                    }
+                }
+
+                this.state.inventory.push(savedItem);
+                this.state.isSaved = true;
+                
+                document.getElementById("btnSavePlate").disabled = true;
+                this.updateUI();
+                this.saveProgress();
+                this.showToast(`Номер сохранен в гараж!`);
+            }
+
+            renderPlate(plate) {
+                const target = document.getElementById("plateTarget");
+                const c = this.state.currentCountry;
+
+                if (c === "RU") {
+                    target.innerHTML = `
+                        <div class="license-plate plate-ru">
+                            <div class="main-sign">
+                                <span class="char-group">${plate.l1}</span>
+                                <span class="num-group">${plate.num}</span>
+                                <span class="char-group">${plate.l23}</span>
+                            </div>
+                            <div class="region-block">
+                                <div class="region-code">${plate.reg}</div>
+                                <div class="country-info">
+                                    <span>RUS</span>
+                                    <div class="flag-ru"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (c === "GE") {
+                    target.innerHTML = `
+                        <div class="license-plate plate-ge">
+                            <div class="euro-band">
+                                <svg class="ge-flag-svg" viewBox="0 0 300 200">
+                                    <rect width="300" height="200" fill="#fff"/>
+                                    <path d="M135 0h30v200h-30zm-135 85h300v30h-300z" fill="#ff0000"/>
+                                    <!-- 4 маленьких креста -->
+                                    <g fill="#ff0000">
+                                        <path d="M62 30h6v16h-6zm-5 5h16v6h-16zM232 30h6v16h-6zm-5 5h16v6h-16zM62 144h6v16h-6zm-5 5h16v6h-16zM232 144h6v16h-6zm-5 5h16v6h-16z"/>
+                                    </g>
+                                </svg>
+                            </div>
+                            <div>${plate.l1}-${plate.num}-${plate.l2}</div>
+                            <div class="hologram"></div>
+                        </div>
+                    `;
+                } else {
+                    let textStr = "";
+                    let hasBand = true;
+
+                    if (c === "KZ") { textStr = `${plate.num} ${plate.l} ${plate.reg}`; hasBand = false; }
+                    else if (c === "BY") { textStr = `${plate.num} ${plate.l}-${plate.reg}`; hasBand = false; }
+                    else if (c === "UA") { textStr = `${plate.l1} ${plate.num} ${plate.l2}`; hasBand = false; }
+                    else if (c === "FR") { textStr = `${plate.l1}-${plate.num}-${plate.l2}`; }
+                    else if (c === "DE") { textStr = `${plate.l1} ${plate.l2} ${plate.num}`; }
+                    else if (c === "PL") { textStr = `${plate.l} ${plate.num}`; }
+                    else if (c === "ES") { textStr = `${plate.num} ${plate.l}`; }
+
+                    target.innerHTML = `
+                        <div class="license-plate plate-foreign ${hasBand ? 'has-band' : ''}">
+                            ${hasBand ? `
+                                <div class="euro-band">
+                                    <div class="euro-stars">★★<br>★★</div>
+                                    <div class="country-code">${c}</div>
+                                </div>
+                            ` : ''}
+                            <div>${textStr}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            updateUI() {
+                document.getElementById("balanceDisplay").textContent = `${this.state.balance.toLocaleString()} ₽`;
+                this.renderPlate(this.state.currentPlate);
+
+                const rarityTag = document.getElementById("rarityDisplay");
+                rarityTag.innerHTML = `<span class="rarity-tag" style="background-color: ${this.state.currentRarity.color}">${this.state.currentRarity.label}</span>`;
+
+                document.getElementById("inventoryCount").textContent = `Слот: ${this.state.inventory.length} / ${this.maxInventorySize}`;
+
+                const hasRegion = ["RU", "KZ", "BY"].includes(this.state.currentCountry);
+                document.getElementById("btnRollRegion").disabled = !hasRegion || this.state.isRolling;
+                document.getElementById("btnSavePlate").disabled = this.state.isSaved || this.state.isRolling;
+
+                this.updateInventoryDOM();
+            }
+
+            updateInventoryDOM() {
+                for (let i = 0; i < this.maxInventorySize; i++) {
+                    const cell = document.getElementById(`inv-cell-${i}`);
+                    const item = this.state.inventory[i];
+
+                    if (item) {
+                        cell.className = "inventory-cell occupied";
+                        cell.style.borderColor = item.rarity.color;
+                        cell.innerHTML = `
+                            <div class="item-plate-text">${item.readable}</div>
+                            <div class="item-info" style="color: ${item.rarity.color}">${item.rarity.label}</div>
+                            <button class="btn-sell" onclick="game.sellItem(${i})">Продать<br>+${item.price.toLocaleString()}₽</button>
+                        `;
+                    } else {
+                        cell.className = "inventory-cell";
+                        cell.style.borderColor = "#444";
+                        cell.innerHTML = "";
+                    }
+                }
+            }
+
+            sellItem(index) {
+                if (this.state.isRolling) return;
+                const item = this.state.inventory[index];
+                if (!item) return;
+
+                this.state.balance += item.price;
+                this.state.inventory.splice(index, 1);
+                
+                this.showToast(`Продано за +${item.price.toLocaleString()} ₽`);
+                this.updateUI();
+                this.saveProgress();
+            }
+
+            toggleButtons(enabled) {
+                document.getElementById("btnRollAll").disabled = !enabled;
+                document.getElementById("btnRollLetters").disabled = !enabled;
+                document.getElementById("btnRollNumbers").disabled = !enabled;
+                const hasRegion = ["RU", "KZ", "BY"].includes(this.state.currentCountry);
+                document.getElementById("btnRollRegion").disabled = !enabled || !hasRegion;
+                document.getElementById("btnSavePlate").disabled = !enabled || this.state.isSaved;
+            }
+
+            showToast(message, isError = false) {
+                const box = document.getElementById("logBox");
+                const toast = document.createElement("div");
+                toast.className = "log-toast";
+                if (isError) {
+                    toast.style.borderLeftColor = "#ff3333";
+                    toast.style.backgroundColor = "#2a1212";
+                } else {
+                    toast.style.borderLeftColor = "#33aa33";
+                }
+                toast.textContent = message;
+                box.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = "0";
+                    toast.style.transform = "translateX(50px)";
+                    toast.style.transition = "all 0.3s ease";
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
+
+            saveProgress() {
+                localStorage.setItem("blatnoy_game_save_v1.3", JSON.stringify({
+                    balance: this.state.balance,
+                    inventory: this.state.inventory,
+                    currentCountry: this.state.currentCountry,
+                    currentPlate: this.state.currentPlate,
+                    currentRarity: this.state.currentRarity,
+                    uniqueHistory: Array.from(this.uniqueHistory)
+                }));
+            }
+
+            loadProgress() {
+                const save = localStorage.getItem("blatnoy_game_save_v1.3");
+                if (save) {
+                    try {
+                        const parsed = JSON.parse(save);
+                        this.state.balance = parsed.balance ?? 1000;
+                        this.state.inventory = parsed.inventory ?? [];
+                        this.state.currentCountry = parsed.currentCountry ?? "RU";
+                        this.state.currentPlate = parsed.currentPlate;
+                        this.state.currentRarity = parsed.currentRarity ?? RARITIES.COMMON;
+                        this.uniqueHistory = new Set(parsed.uniqueHistory ?? []);
+                    } catch (e) {
+                        console.error("Ошибка чтения сохранения.");
+                    }
+                }
+            }
+
+            resetProgress() {
+                if (confirm("Сбросить весь авторитет и начать заново?")) {
+                    localStorage.removeItem("blatnoy_game_save_v1.3");
+                    this.state.balance = 1000;
+                    this.state.inventory = [];
+                    this.state.currentCountry = "RU";
+                    this.state.currentPlate = PlateEngine.generate("RU");
+                    this.state.currentRarity = RARITIES.COMMON;
+                    this.state.isRolling = false;
+                    this.state.isSaved = false;
+                    this.uniqueHistory.clear();
+                    
+                    this.renderCountrySelector();
+                    this.toggleButtons(true);
+                    this.updateUI();
+                    this.showToast("История очищена!");
+                }
+            }
+        }
+
+        const game = new GameController();
+        window.onload = () => {
+            game.init();
+        };
+    </script>
+</body>
+</html>
